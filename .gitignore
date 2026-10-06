@@ -7,3 +7,7 @@ __pycache__/
 .venv/
 node_modules/
 .DS_Store
+
+# Local handoff notes and Windows download tags
+*handoff*.md
+*Zone.Identifier
