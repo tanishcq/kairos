@@ -7,9 +7,6 @@ on:
       - "services/hobby-service/**"
       - ".github/workflows/hobby-service.yml"
   pull_request:
-    paths:
-      - "services/hobby-service/**"
-      - ".github/workflows/hobby-service.yml"
 
 permissions:
   contents: read
