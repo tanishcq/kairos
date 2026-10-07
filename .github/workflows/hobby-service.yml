@@ -1,0 +1,44 @@
+name: hobby-service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/hobby-service/**"
+      - ".github/workflows/hobby-service.yml"
+  pull_request:
+    paths:
+      - "services/hobby-service/**"
+      - ".github/workflows/hobby-service.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: services/hobby-service
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: services/hobby-service/requirements*.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+      - name: Pytest
+        run: pytest -v
