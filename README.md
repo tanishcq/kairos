@@ -1,5 +1,7 @@
 # Kairos
 
+[![hobby-service CI](https://github.com/tanishcq/kairos/actions/workflows/hobby-service.yml/badge.svg)](https://github.com/tanishcq/kairos/actions/workflows/hobby-service.yml)
+
 Kairos is the Greek word for "the right moment". It's a small app for people with
 ADHD to park a hobby session and resume it at the right time, with solo and
 shared (partner/friends) hobbies.
