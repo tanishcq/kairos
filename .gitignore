@@ -4,6 +4,7 @@
 .terraform/
 __pycache__/
 *.pyc
+*.db
 .venv/
 node_modules/
 .DS_Store

@@ -1,7 +1,7 @@
 # hobby-service
 
-Kairos service for managing hobbies. FastAPI, in-memory storage for now
-(data is lost on restart; PostgreSQL comes in a later phase).
+Kairos service for managing hobbies. FastAPI + SQLAlchemy, stored in PostgreSQL
+(via Docker Compose) or a local SQLite file when run without Postgres.
 
 ## Endpoints
 
@@ -33,6 +33,28 @@ uvicorn app.main:app --reload
 ```
 
 Then open http://localhost:8000/health. Stop with Ctrl+C.
+Without `DATABASE_URL` set, data goes to `hobby-dev.db` (gitignored).
+
+## Configuration
+
+| Variable       | Default                    | Example (Compose)                                      |
+|----------------|----------------------------|--------------------------------------------------------|
+| `DATABASE_URL` | `sqlite:///./hobby-dev.db` | `postgresql+psycopg://user:pass@postgres:5432/kairos`  |
+
+Tables are created at startup if missing.
+
+## Docker
+
+Build and run the image on its own. `/app` is read-only for the non-root user, so point
+SQLite at `/tmp` (data is lost when the container is removed):
+
+```bash
+docker build -t kairos-hobby-service:dev .
+docker run --rm -p 8000:8000 -e DATABASE_URL=sqlite:////tmp/hobby.db kairos-hobby-service:dev
+```
+
+The image is multi-stage, based on `python:3.14-slim`, and runs as the non-root user `kairos` (UID 10001).
+For the full stack with PostgreSQL, see the root README.
 
 ## Test
 

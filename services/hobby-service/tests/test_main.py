@@ -1,17 +1,35 @@
-from itertools import count
-
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-from app import main
+from app.db import Base, get_session
+from app.main import app
 
-client = TestClient(main.app)
+client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def reset_storage(monkeypatch):
-    monkeypatch.setattr(main, "_hobbies", {})
-    monkeypatch.setattr(main, "_ids", count(start=1))
+def test_database():
+    # Fresh in-memory SQLite database for every test.
+    # StaticPool keeps one shared connection, otherwise each connection would get its own empty DB.
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    session_factory = sessionmaker(bind=engine)
+
+    def override_get_session():
+        with session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_session] = override_get_session
+    yield
+    app.dependency_overrides.clear()
+    engine.dispose()
 
 
 def test_health():
