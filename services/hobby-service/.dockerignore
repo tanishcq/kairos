@@ -1,10 +1,10 @@
 # Local Python environment and caches: the image builds its own
 .venv/
-__pycache__/
-*.pyc
+**/__pycache__/
+**/*.pyc
 .pytest_cache/
 .ruff_cache/
-*.db
+**/*.db
 
 # Not needed to run the service
 tests/
