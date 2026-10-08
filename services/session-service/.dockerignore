@@ -1,0 +1,15 @@
+# Local Python environment and caches: the image builds its own
+.venv/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+.ruff_cache/
+**/*.db
+
+# Not needed to run the service
+tests/
+requirements-dev.txt
+README.md
+
+# Secrets must never enter an image
+.env
