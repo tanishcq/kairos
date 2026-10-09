@@ -1,0 +1,76 @@
+/* Calm, quiet styling: soft colours, no alarm-red, light and dark mode. */
+:root {
+  --bg: #f7f5f0;
+  --card: #ffffff;
+  --text: #2b2b2b;
+  --muted: #6b6b6b;
+  --accent: #3f7d6e;
+  --line: #e2ded5;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d1f1e;
+    --card: #272a29;
+    --text: #e8e6e1;
+    --muted: #a3a09a;
+    --accent: #7fbfae;
+    --line: #3a3d3c;
+  }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  padding: 2rem 1rem;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, sans-serif;
+}
+
+header, main { max-width: 40rem; margin: 0 auto; }
+h1 { margin: 0; color: var(--accent); }
+h2 { font-size: 1.1rem; margin: 2rem 0 0.75rem; }
+
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.error { color: #a0522d; }
+
+form { display: grid; gap: 0.75rem; }
+label { display: grid; gap: 0.25rem; font-size: 0.9rem; color: var(--muted); }
+.row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.row input:not(.emoji) { flex: 1; }
+.emoji { width: 4rem; text-align: center; }
+
+input, select, textarea, button { font: inherit; }
+input, select, textarea {
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--card);
+  color: var(--text);
+}
+
+button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--bg);
+  cursor: pointer;
+}
+button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+button.link { padding: 0; background: none; color: var(--accent); text-decoration: underline; }
+
+ul { list-style: none; padding: 0; margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.chips li { padding: 0.25rem 0.75rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--card); }
+
+.cards { display: grid; gap: 0.75rem; }
+.cards li { padding: 1rem; border: 1px solid var(--line); border-radius: 0.75rem; background: var(--card); }
+.cards p { margin: 0 0 0.25rem; }
+.hobby { font-weight: 600; }
+.next-step { font-size: 1.25rem; margin: 0.25rem 0 0.5rem !important; }

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kairos</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Kairos</h1>
+    <p class="muted">Park it now. Pick it up at the right moment.</p>
+    <p id="whoami" hidden><span id="user-email"></span> · <button id="logout" class="link">Log out</button></p>
+  </header>
+
+  <main>
+    <p id="message" role="status"></p>
+
+    <section id="auth-view">
+      <h2>Welcome</h2>
+      <form id="auth-form">
+        <label>Email <input type="email" name="email" required autocomplete="email"></label>
+        <label>Password <input type="password" name="password" required minlength="8" maxlength="128" autocomplete="current-password"></label>
+        <div class="row">
+          <button type="submit" value="login">Log in</button>
+          <button type="submit" value="register" class="secondary">Create account</button>
+        </div>
+      </form>
+    </section>
+
+    <div id="app-view" hidden>
+      <section>
+        <h2>Ready to resume</h2>
+        <p id="no-parked" class="muted" hidden>Nothing parked right now. That's fine.</p>
+        <ul id="parked-list" class="cards"></ul>
+      </section>
+
+      <section>
+        <h2>Park a session</h2>
+        <form id="park-form">
+          <label>Hobby <select name="hobby_id" required></select></label>
+          <label>Where I stopped <textarea name="where_i_stopped" required maxlength="500" rows="2"></textarea></label>
+          <label>Next tiny step <textarea name="next_tiny_step" required maxlength="500" rows="2"></textarea></label>
+          <button type="submit">Park it</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Your hobbies</h2>
+        <ul id="hobby-list" class="chips"></ul>
+        <form id="hobby-form" class="row">
+          <input name="emoji" placeholder="🎸" maxlength="8" class="emoji" aria-label="Emoji">
+          <input name="name" placeholder="New hobby" required maxlength="100" aria-label="Hobby name">
+          <button type="submit">Add</button>
+        </form>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

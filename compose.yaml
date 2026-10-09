@@ -35,6 +35,16 @@ services:
       postgres:
         condition: service_healthy
 
+  frontend:
+    build: ./frontend
+    image: kairos-frontend:dev
+    ports:
+      - "8088:8080"
+    depends_on:
+      - hobby-service
+      - session-service
+      - user-service
+
   postgres:
     image: postgres:18-alpine
     environment:
