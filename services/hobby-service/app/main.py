@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import String, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from app.auth import CurrentUserId
 from app.db import Base, engine, get_session
 
 
@@ -14,6 +15,8 @@ class HobbyRow(Base):
     __tablename__ = "hobbies"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Owner: the user id ("sub") from the login token. Users live in user-service.
+    user_id: Mapped[int] = mapped_column(index=True)
     name: Mapped[str] = mapped_column(String(100))
     emoji: Mapped[str | None]
 
@@ -47,8 +50,8 @@ def health() -> dict[str, str]:
 
 
 @app.post("/hobbies", status_code=status.HTTP_201_CREATED)
-def create_hobby(payload: HobbyCreate, session: SessionDep) -> Hobby:
-    row = HobbyRow(**payload.model_dump())
+def create_hobby(payload: HobbyCreate, user_id: CurrentUserId, session: SessionDep) -> Hobby:
+    row = HobbyRow(**payload.model_dump(), user_id=user_id)
     session.add(row)
     session.commit()
     session.refresh(row)
@@ -56,14 +59,16 @@ def create_hobby(payload: HobbyCreate, session: SessionDep) -> Hobby:
 
 
 @app.get("/hobbies")
-def list_hobbies(session: SessionDep) -> list[Hobby]:
-    rows = session.scalars(select(HobbyRow).order_by(HobbyRow.id))
+def list_hobbies(user_id: CurrentUserId, session: SessionDep) -> list[Hobby]:
+    query = select(HobbyRow).where(HobbyRow.user_id == user_id).order_by(HobbyRow.id)
+    rows = session.scalars(query)
     return [Hobby.model_validate(row) for row in rows]
 
 
 @app.get("/hobbies/{hobby_id}")
-def get_hobby(hobby_id: int, session: SessionDep) -> Hobby:
+def get_hobby(hobby_id: int, user_id: CurrentUserId, session: SessionDep) -> Hobby:
     row = session.get(HobbyRow, hobby_id)
-    if row is None:
+    # Someone else's hobby gets the same 404 as a missing one, so its existence isn't revealed.
+    if row is None or row.user_id != user_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hobby not found")
     return Hobby.model_validate(row)
