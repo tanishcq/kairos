@@ -1,13 +1,25 @@
+from datetime import UTC, datetime, timedelta
+
+import jwt
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.auth import JWT_ALGORITHM, JWT_SECRET
 from app.db import Base, get_session
 from app.main import app
 
-client = TestClient(app)
+
+def auth(user_id: int) -> dict[str, str]:
+    """Authorization header with a token like the ones user-service issues."""
+    payload = {"sub": str(user_id), "exp": datetime.now(UTC) + timedelta(minutes=5)}
+    return {"Authorization": f"Bearer {jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)}"}
+
+
+client = TestClient(app, headers=auth(1))  # every request is user 1 unless headers say otherwise
+anonymous = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
@@ -108,3 +120,22 @@ def test_list_sessions_filters():
     assert stopped({"parked": "true"}) == ["third", "second"]
     assert stopped({"parked": "false"}) == ["first"]
     assert stopped({"hobby_id": 1, "parked": "true"}) == ["second"]
+
+
+def test_sessions_require_login():
+    assert anonymous.get("/sessions").status_code == 401
+    assert anonymous.post("/sessions/1/resume").status_code == 401
+    response = anonymous.post(
+        "/sessions", json={"hobby_id": 1, "where_i_stopped": "x", "next_tiny_step": "y"}
+    )
+    assert response.status_code == 401
+
+
+def test_users_only_see_their_own_sessions():
+    park(stopped="mine")
+    other = auth(2)
+
+    assert client.get("/sessions", headers=other).json() == []
+    assert client.get("/sessions/1", headers=other).status_code == 404
+    assert client.post("/sessions/1/resume", headers=other).status_code == 404
+    assert client.get("/sessions/1").json()["resumed_at"] is None  # untouched by user 2

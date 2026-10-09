@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import DateTime, String, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from app.auth import CurrentUserId
 from app.db import Base, engine, get_session
 
 
@@ -19,6 +20,8 @@ class HobbySessionRow(Base):
     __tablename__ = "hobby_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Owner: the user id ("sub") from the login token. Users live in user-service.
+    user_id: Mapped[int] = mapped_column(index=True)
     # ID from hobby-service. Not a foreign key: that table belongs to another service.
     hobby_id: Mapped[int] = mapped_column(index=True)
     where_i_stopped: Mapped[str] = mapped_column(String(500))
@@ -54,9 +57,10 @@ class HobbySession(HobbySessionCreate):
     resumed_at: datetime | None
 
 
-def get_row_or_404(db: Session, session_id: int) -> HobbySessionRow:
+def get_row_or_404(db: Session, session_id: int, user_id: int) -> HobbySessionRow:
     row = db.get(HobbySessionRow, session_id)
-    if row is None:
+    # Someone else's session gets the same 404 as a missing one, so its existence isn't revealed.
+    if row is None or row.user_id != user_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return row
 
@@ -67,8 +71,10 @@ def health() -> dict[str, str]:
 
 
 @app.post("/sessions", status_code=status.HTTP_201_CREATED)
-def park_session(payload: HobbySessionCreate, db: DbSession) -> HobbySession:
-    row = HobbySessionRow(**payload.model_dump())
+def park_session(
+    payload: HobbySessionCreate, user_id: CurrentUserId, db: DbSession
+) -> HobbySession:
+    row = HobbySessionRow(**payload.model_dump(), user_id=user_id)
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -77,9 +83,16 @@ def park_session(payload: HobbySessionCreate, db: DbSession) -> HobbySession:
 
 @app.get("/sessions")
 def list_sessions(
-    db: DbSession, hobby_id: int | None = None, parked: bool | None = None
+    user_id: CurrentUserId,
+    db: DbSession,
+    hobby_id: int | None = None,
+    parked: bool | None = None,
 ) -> list[HobbySession]:
-    query = select(HobbySessionRow).order_by(HobbySessionRow.id.desc())
+    query = (
+        select(HobbySessionRow)
+        .where(HobbySessionRow.user_id == user_id)
+        .order_by(HobbySessionRow.id.desc())
+    )
     if hobby_id is not None:
         query = query.where(HobbySessionRow.hobby_id == hobby_id)
     if parked is True:
@@ -90,13 +103,13 @@ def list_sessions(
 
 
 @app.get("/sessions/{session_id}")
-def get_hobby_session(session_id: int, db: DbSession) -> HobbySession:
-    return HobbySession.model_validate(get_row_or_404(db, session_id))
+def get_hobby_session(session_id: int, user_id: CurrentUserId, db: DbSession) -> HobbySession:
+    return HobbySession.model_validate(get_row_or_404(db, session_id, user_id))
 
 
 @app.post("/sessions/{session_id}/resume")
-def resume_session(session_id: int, db: DbSession) -> HobbySession:
-    row = get_row_or_404(db, session_id)
+def resume_session(session_id: int, user_id: CurrentUserId, db: DbSession) -> HobbySession:
+    row = get_row_or_404(db, session_id, user_id)
     if row.resumed_at is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Session already resumed")
     row.resumed_at = utcnow()
