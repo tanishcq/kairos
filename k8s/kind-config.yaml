@@ -1,0 +1,23 @@
+# Local Kubernetes cluster for Kairos. kind runs each node as a Docker container.
+# Create: kind create cluster --config k8s/kind-config.yaml
+# Delete: kind delete cluster --name kairos
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: kairos
+nodes:
+  - role: control-plane
+    # Pinned (tag + digest): Envoy Gateway v1.9 supports Kubernetes v1.33-v1.36.
+    image: kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+    labels:
+      ingress-ready: "true"
+    extraPortMappings:
+      # The node's ports 80/443 (where the ingress controller will listen) published on the
+      # laptop as 8090/8443. Not 80/443 (often taken on Windows) and not 8080 (Airflow).
+      - containerPort: 80
+        hostPort: 8090
+        listenAddress: "127.0.0.1"
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 8443
+        listenAddress: "127.0.0.1"
+        protocol: TCP

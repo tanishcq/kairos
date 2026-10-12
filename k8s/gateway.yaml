@@ -1,0 +1,65 @@
+# Entry point for browser traffic (Gateway API, served by Envoy Gateway).
+# Browser -> localhost:8090 -> kind node port 80 -> Envoy -> frontend Service.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: kind-hostport
+  namespace: kairos
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      # kind has no cloud load balancer: keep the Service internal and bind Envoy
+      # straight to the node's port 80 (published to the laptop by kind-config.yaml).
+      envoyService:
+        type: ClusterIP
+      envoyDeployment:
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              template:
+                spec:
+                  containers:
+                    - name: envoy
+                      ports:
+                        - containerPort: 10080 # Envoy's internal port for listener 80
+                          hostPort: 80
+                          protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: kairos
+  namespace: kairos
+spec:
+  gatewayClassName: envoy
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: kind-hostport
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: frontend
+  namespace: kairos
+spec:
+  parentRefs:
+    - name: kairos
+  rules:
+    - backendRefs:
+        - name: frontend
+          port: 80
