@@ -26,3 +26,8 @@ docker compose up -d --build
 - PostgreSQL is only reachable inside the Compose network; data lives in the `kairos_pgdata` volume.
 
 Stop with `docker compose down` (data is kept). `docker compose down -v` also deletes the data volume.
+
+## Run on Kubernetes (kind)
+
+The same app on a local Kubernetes cluster, behind Envoy Gateway at http://localhost:8090.
+Step-by-step guide: [k8s/README.md](k8s/README.md).
